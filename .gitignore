@@ -13,5 +13,6 @@ yarn-error.log*
 .env*
 !.env.example
 .vercel
+.mcp.json
 *.tsbuildinfo
 next-env.d.ts
