@@ -26,13 +26,13 @@ export async function joinWaitlist(_: WaitlistResult | null, formData: FormData)
     return { error: 'Please fill in all required fields.' }
   }
 
-  // Use anon client for the public insert (RLS allows it)
+  const id = crypto.randomUUID()
+
+  // Use anon client for the public insert (RLS allows INSERT but not SELECT)
   const supabase = await createClient()
-  const { data: entry, error: insertError } = await supabase
+  const { error: insertError } = await supabase
     .from('waitlist')
-    .insert({ name, restaurant_name, email, platforms, orders_per_day })
-    .select('id')
-    .single()
+    .insert({ id, name, restaurant_name, email, platforms, orders_per_day })
 
   if (insertError) {
     if (insertError.code === '23505') return { error: 'This email is already on the waitlist.' }
@@ -40,7 +40,7 @@ export async function joinWaitlist(_: WaitlistResult | null, formData: FormData)
   }
 
   if (INVITE_DELAY_MINUTES === 0) {
-    await sendInvite({ id: entry.id, email, restaurant_name })
+    await sendInvite({ id, email, restaurant_name })
   }
   // When INVITE_DELAY_MINUTES > 0, a future cron will pick up pending entries and send
 
