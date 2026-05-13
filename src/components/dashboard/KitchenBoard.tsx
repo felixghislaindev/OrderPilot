@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import type { Order, OrderStatus } from '@/types/orders'
-import { mockOrders } from '@/lib/mock-data'
+import type { OrderStatus } from '@/types/orders'
+import { useOrders } from '@/contexts/OrdersContext'
 import { OrderCard } from '@/components/orders/OrderCard'
 import { cn } from '@/lib/utils'
 
@@ -13,13 +12,7 @@ const COLUMNS: { statuses: OrderStatus[]; label: string; color: string }[] = [
 ]
 
 export function KitchenBoard() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
-
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prev =>
-      prev.map(o => (o.id === orderId ? { ...o, status: newStatus } : o))
-    )
-  }
+  const { orders, handleStatusChange } = useOrders()
 
   const activeCount = orders.filter(o =>
     ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)

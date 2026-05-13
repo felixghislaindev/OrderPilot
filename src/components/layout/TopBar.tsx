@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { Bell, Search } from 'lucide-react'
 import { format } from 'date-fns'
-import { mockOrders } from '@/lib/mock-data'
+import { useOrders } from '@/contexts/OrdersContext'
 
 export function TopBar() {
   const [time, setTime] = useState<Date | null>(null)
+  const { orders } = useOrders()
 
   useEffect(() => {
     setTime(new Date())
@@ -14,7 +15,7 @@ export function TopBar() {
     return () => clearInterval(timer)
   }, [])
 
-  const pendingCount = mockOrders.filter(o => o.status === 'pending').length
+  const pendingCount = orders.filter(o => o.status === 'pending').length
 
   return (
     <header className="h-14 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between px-6 shrink-0">

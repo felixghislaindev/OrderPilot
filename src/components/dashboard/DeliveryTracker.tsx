@@ -1,14 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { Clock } from 'lucide-react'
-import type { Order } from '@/types/orders'
-import { mockOrders } from '@/lib/mock-data'
+import { useOrders } from '@/contexts/OrdersContext'
 import { cn, getPlatformColors, getPlatformLabel, formatCurrency } from '@/lib/utils'
 
 export function DeliveryTracker() {
-  const [orders] = useState<Order[]>(mockOrders)
-
+  const { orders } = useOrders()
   const active = orders.filter(o => ['picked_up', 'ready'].includes(o.status))
 
   return (

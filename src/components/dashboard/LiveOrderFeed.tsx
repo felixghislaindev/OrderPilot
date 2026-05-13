@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import type { Order, OrderStatus } from '@/types/orders'
-import { mockOrders } from '@/lib/mock-data'
+import type { OrderStatus } from '@/types/orders'
+import { useOrders } from '@/contexts/OrdersContext'
 import { OrderCard } from '@/components/orders/OrderCard'
 import { cn } from '@/lib/utils'
 
@@ -17,15 +16,11 @@ const FILTERS: { label: string; value: FilterValue }[] = [
   { label: 'Delivered', value: 'delivered' },
 ]
 
-export function LiveOrderFeed() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
-  const [filter, setFilter] = useState<FilterValue>('active')
+import { useState } from 'react'
 
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(prev =>
-      prev.map(o => (o.id === orderId ? { ...o, status: newStatus } : o))
-    )
-  }
+export function LiveOrderFeed() {
+  const { orders, handleStatusChange, loading } = useOrders()
+  const [filter, setFilter] = useState<FilterValue>('active')
 
   const filtered = orders
     .filter(o => {
@@ -57,7 +52,11 @@ export function LiveOrderFeed() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center h-32 bg-zinc-900 border border-dashed border-zinc-800 rounded-xl">
+          <span className="text-sm text-zinc-600">Loading orders…</span>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="flex items-center justify-center h-32 bg-zinc-900 border border-dashed border-zinc-800 rounded-xl">
           <span className="text-sm text-zinc-600">No orders to show</span>
         </div>

@@ -11,7 +11,6 @@ import {
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { mockRestaurant } from '@/lib/mock-data'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,7 +20,7 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-export function Sidebar() {
+export function Sidebar({ restaurantName }: { restaurantName: string }) {
   const pathname = usePathname()
 
   return (
@@ -58,11 +57,11 @@ export function Sidebar() {
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-800/40">
           <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-indigo-400">
-              {mockRestaurant.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+              {restaurantName.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-zinc-200 truncate">{mockRestaurant.name}</p>
+            <p className="text-xs font-medium text-zinc-200 truncate">{restaurantName}</p>
             <p className="text-xs text-zinc-500">Admin</p>
           </div>
         </div>

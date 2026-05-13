@@ -1,7 +1,7 @@
 'use client'
 
 import { TrendingUp, TrendingDown, Zap, Clock, CheckCircle2 } from 'lucide-react'
-import { mockAnalytics, mockOrders } from '@/lib/mock-data'
+import { useOrders } from '@/contexts/OrdersContext'
 import { formatCurrency, cn } from '@/lib/utils'
 
 interface MetricCardProps {
@@ -40,40 +40,55 @@ function MetricCard({ label, value, trendLabel, sub, trend = 'neutral', valueCol
 }
 
 export function AnalyticsStrip() {
-  const activeOrders = mockOrders.filter(
-    o => !['delivered', 'cancelled'].includes(o.status)
-  ).length
+  const { orders } = useOrders()
+
+  const today = new Date().toDateString()
+  const todayOrders = orders.filter(o => new Date(o.placed_at).toDateString() === today)
+  const activeOrders = orders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length
+  const revenueToday = todayOrders.reduce((sum, o) => sum + o.total, 0)
+
+  const delivered = todayOrders.filter(o => o.status === 'delivered' && o.prep_started_at && o.ready_at)
+  const avgPrepTime = delivered.length > 0
+    ? Math.round(delivered.reduce((sum, o) => {
+        const mins = (new Date(o.ready_at!).getTime() - new Date(o.prep_started_at!).getTime()) / 60000
+        return sum + mins
+      }, 0) / delivered.length)
+    : null
+
+  const onTime = delivered.filter(o => {
+    const actual = (new Date(o.ready_at!).getTime() - new Date(o.prep_started_at!).getTime()) / 60000
+    return actual <= o.estimated_prep_minutes
+  })
+  const onTimeRate = delivered.length > 0 ? Math.round((onTime.length / delivered.length) * 100) : null
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <MetricCard
         label="Active Orders"
         value={String(activeOrders)}
-        trendLabel="+3 from 1hr ago"
-        trend="up"
+        trendLabel={`${todayOrders.length} orders today`}
+        trend="neutral"
         icon={<Zap className="w-4 h-4" />}
       />
       <MetricCard
         label="Revenue Today"
-        value={formatCurrency(mockAnalytics.revenue)}
-        trendLabel="+12.4%"
-        sub="vs yesterday"
+        value={formatCurrency(revenueToday)}
+        trendLabel={`${todayOrders.length} orders`}
         trend="up"
         valueColor="text-emerald-400"
         icon={<TrendingUp className="w-4 h-4" />}
       />
       <MetricCard
         label="Avg Prep Time"
-        value={`${mockAnalytics.avg_prep_time_minutes} min`}
-        trendLabel="−1.2 min"
-        sub="vs last week"
-        trend="up"
+        value={avgPrepTime != null ? `${avgPrepTime} min` : '—'}
+        trendLabel={delivered.length > 0 ? `${delivered.length} completed` : 'No data yet'}
+        trend="neutral"
         icon={<Clock className="w-4 h-4" />}
       />
       <MetricCard
         label="On-Time Rate"
-        value={`${mockAnalytics.on_time_rate}%`}
-        trendLabel={`${mockAnalytics.total_orders} orders today`}
+        value={onTimeRate != null ? `${onTimeRate}%` : '—'}
+        trendLabel={delivered.length > 0 ? `${onTime.length}/${delivered.length} on time` : 'No data yet'}
         trend="neutral"
         icon={<CheckCircle2 className="w-4 h-4" />}
       />
