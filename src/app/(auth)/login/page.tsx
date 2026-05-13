@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Zap, ArrowRight, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -65,7 +66,12 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-zinc-400 block mb-1.5">Password</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-zinc-400">Password</label>
+                <Link href="/auth/forgot-password" className="text-xs text-zinc-500 hover:text-indigo-400 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}
@@ -106,7 +112,10 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-zinc-600 mt-4">
-          No account? <span className="text-zinc-400">Request access</span>
+          No account?{' '}
+          <Link href="/waitlist" className="text-zinc-400 hover:text-indigo-400 transition-colors">
+            Request access
+          </Link>
         </p>
       </div>
     </div>

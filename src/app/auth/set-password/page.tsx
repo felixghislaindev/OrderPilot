@@ -51,9 +51,9 @@ export default function SetPasswordPage() {
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <h1 className="text-lg font-semibold text-zinc-50 mb-1">Create your password</h1>
+          <h1 className="text-lg font-semibold text-zinc-50 mb-1">Set your password</h1>
           <p className="text-sm text-zinc-500 mb-6">
-            You&apos;ll use this to sign in to your dashboard.
+            Choose a password to access your dashboard.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

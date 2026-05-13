@@ -20,7 +20,7 @@ function AuthConfirm() {
         return
       }
 
-      // Implicit flow — tokens in URL hash (#access_token=...&refresh_token=...)
+      // Implicit flow — tokens in URL hash (#access_token=...&refresh_token=...&type=invite|recovery)
       const hash = window.location.hash
       if (hash) {
         const params = new URLSearchParams(hash.slice(1))
@@ -29,6 +29,7 @@ function AuthConfirm() {
 
         if (accessToken && refreshToken) {
           const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          // Both invite and recovery flows need the user to set/reset their password
           router.replace(error ? '/login?error=invite_expired' : '/auth/set-password')
           return
         }
