@@ -12,27 +12,33 @@ function AuthConfirm() {
     const supabase = createClient()
     const code = searchParams.get('code')
 
-    async function exchange() {
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          router.replace('/login?error=invite_expired')
-          return
-        }
-      }
-
-      // Implicit flow: getSession() picks up the hash automatically
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (session) {
-        // This page is invite-only — always send to set-password
-        router.replace('/auth/set-password')
-      } else {
-        router.replace('/login?error=invite_expired')
-      }
+    if (code) {
+      // PKCE flow — exchange code for session
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) router.replace('/login?error=invite_expired')
+        else router.replace('/auth/set-password')
+      })
+      return
     }
 
-    exchange()
+    // Implicit flow — onAuthStateChange fires when Supabase detects the hash tokens
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        subscription.unsubscribe()
+        router.replace('/auth/set-password')
+      }
+    })
+
+    // Fallback: if no auth event fires within 6s, the link is invalid/expired
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe()
+      router.replace('/login?error=invite_expired')
+    }, 6000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [router, searchParams])
 
   return (
