@@ -11,22 +11,22 @@ function AuthConfirm() {
   useEffect(() => {
     const supabase = createClient()
     const code = searchParams.get('code')
-    const next = searchParams.get('next') ?? ''
 
     async function exchange() {
       if (code) {
-        // PKCE flow — exchange the code for a session
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (error) {
           router.replace('/login?error=invite_expired')
           return
         }
       }
-      // Implicit flow — getSession() parses the hash automatically
+
+      // Implicit flow: getSession() picks up the hash automatically
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session) {
-        router.replace(next === 'set-password' ? '/auth/set-password' : '/dashboard')
+        // This page is invite-only — always send to set-password
+        router.replace('/auth/set-password')
       } else {
         router.replace('/login?error=invite_expired')
       }
