@@ -1,27 +1,39 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-// Handles invite links: /auth/confirm#access_token=...&type=invite
-// Exchanges the token then routes to set-password (invite) or dashboard (magic link).
-export default function AuthConfirmPage() {
+function AuthConfirm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     const supabase = createClient()
-    const hash = window.location.hash
-    const isInvite = hash.includes('type=invite')
+    const code = searchParams.get('code')
+    const next = searchParams.get('next') ?? ''
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function exchange() {
+      if (code) {
+        // PKCE flow — exchange the code for a session
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          router.replace('/login?error=invite_expired')
+          return
+        }
+      }
+      // Implicit flow — getSession() parses the hash automatically
+      const { data: { session } } = await supabase.auth.getSession()
+
       if (session) {
-        router.replace(isInvite ? '/auth/set-password' : '/dashboard')
+        router.replace(next === 'set-password' ? '/auth/set-password' : '/dashboard')
       } else {
         router.replace('/login?error=invite_expired')
       }
-    })
-  }, [router])
+    }
+
+    exchange()
+  }, [router, searchParams])
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
@@ -30,5 +42,13 @@ export default function AuthConfirmPage() {
         <p className="text-sm text-zinc-500">Verifying your invite…</p>
       </div>
     </div>
+  )
+}
+
+export default function AuthConfirmPage() {
+  return (
+    <Suspense>
+      <AuthConfirm />
+    </Suspense>
   )
 }

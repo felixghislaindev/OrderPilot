@@ -63,7 +63,7 @@ async function sendInvite({
     type: 'invite',
     email,
     options: {
-      redirectTo: `${siteUrl}/auth/confirm`,
+      redirectTo: `${siteUrl}/auth/confirm?next=set-password`,
       data: { restaurant_name },
     },
   })
