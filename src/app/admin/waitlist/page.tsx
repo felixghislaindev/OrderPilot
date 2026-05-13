@@ -4,7 +4,6 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { ApproveButton } from './ApproveButton'
 import { Zap, Users, CheckCircle2, Clock } from 'lucide-react'
 
-const ADMIN_EMAIL = 'moonlithex@proton.me'
 
 type WaitlistEntry = {
   id: string
@@ -21,7 +20,7 @@ export default async function AdminWaitlistPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
+  if (!user) redirect('/login')
 
   const admin = createAdminClient()
   const { data: entries } = await admin
