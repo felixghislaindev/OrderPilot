@@ -40,13 +40,14 @@ export async function joinWaitlist(_: WaitlistResult | null, formData: FormData)
   }
 
   if (INVITE_DELAY_MINUTES === 0) {
-    await sendInvite({ id, email, restaurant_name })
+    const inviteError = await sendInvite({ id, email, restaurant_name })
+    if (inviteError) return { error: inviteError }
   }
-  // When INVITE_DELAY_MINUTES > 0, a future cron will pick up pending entries and send
 
   return { success: true }
 }
 
+// Returns an error string on failure, undefined on success
 async function sendInvite({
   id,
   email,
@@ -55,7 +56,7 @@ async function sendInvite({
   id: string
   email: string
   restaurant_name: string
-}) {
+}): Promise<string | undefined> {
   const admin = createAdminClient()
 
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
@@ -69,14 +70,13 @@ async function sendInvite({
 
   if (linkError) {
     console.error('[waitlist] generateLink failed:', linkError.message)
-    return
+    if (linkError.message.includes('already been registered')) {
+      return 'This email already has an OrderPilot account.'
+    }
+    return 'Failed to generate invite link. Please try again.'
   }
 
   const inviteUrl = linkData.properties.action_link
-
-  // TESTING: onboarding@resend.dev can only deliver to the Resend account owner.
-  // Set RESEND_TO_OVERRIDE= in .env.local to force all test emails to that address.
-  // Remove the override once a verified sending domain is configured in Resend.
   const toAddress = process.env.RESEND_TO_OVERRIDE ?? email
 
   const { error: emailError } = await resend.emails.send({
@@ -87,8 +87,8 @@ async function sendInvite({
   })
 
   if (emailError) {
-    console.error('[waitlist] Resend failed:', emailError)
-    return
+    console.error('[waitlist] Resend failed:', JSON.stringify(emailError))
+    return 'Failed to send invite email. Please try again.'
   }
 
   // Pre-create the restaurant so they land on a working dashboard
@@ -99,7 +99,6 @@ async function sendInvite({
     platforms: ['uber_eats', 'deliveroo', 'just_eat', 'direct'],
   })
 
-  // Mark approved
   await admin
     .from('waitlist')
     .update({ approved_at: new Date().toISOString() })
