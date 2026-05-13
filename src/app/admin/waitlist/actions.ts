@@ -22,7 +22,7 @@ async function generateAndSend(email: string, restaurantName: string) {
     type: 'invite',
     email,
     options: {
-      redirectTo: `${siteUrl}/auth/callback`,
+      redirectTo: `${siteUrl}/auth/confirm`,
       data: { restaurant_name: restaurantName },
     },
   })

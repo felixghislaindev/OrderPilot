@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
   const isAuthRoute = pathname.startsWith('/login')
-  const isAuthCallback = pathname.startsWith('/auth/callback')
+  const isAuthCallback = pathname.startsWith('/auth/callback') || pathname.startsWith('/auth/confirm')
   const isPublic = pathname === '/' || pathname.startsWith('/waitlist')
 
   if (!user && !isAuthRoute && !isAuthCallback && !isPublic) {
