@@ -5,8 +5,14 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'OrderPilot',
-  description: 'AI-powered operations dashboard for delivery restaurants',
+  title: { default: 'OrderPilot', template: '%s · OrderPilot' },
+  description: 'Real-time order management for delivery restaurants. Every order from Uber Eats, Deliveroo, Just Eat, and direct channels — one live kitchen dashboard.',
+  openGraph: {
+    title: 'OrderPilot',
+    description: 'Real-time order management for delivery restaurants.',
+    url: 'https://orderpilot.online',
+    siteName: 'OrderPilot',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
