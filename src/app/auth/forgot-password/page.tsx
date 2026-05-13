@@ -2,10 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 import { Zap } from 'lucide-react'
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://orderpilot.online'
+import { requestPasswordReset } from './actions'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -18,13 +16,10 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/reset-password`,
-    })
+    const result = await requestPasswordReset(email)
 
-    if (resetError) {
-      setError(resetError.message)
+    if ('error' in result) {
+      setError(result.error)
       setLoading(false)
       return
     }
@@ -48,7 +43,8 @@ export default function ForgotPasswordPage() {
             <div className="text-center py-2">
               <p className="text-sm font-semibold text-zinc-50 mb-2">Check your inbox</p>
               <p className="text-sm text-zinc-500 mb-6">
-                We sent a password reset link to <span className="text-zinc-300">{email}</span>. It expires in 1 hour.
+                We sent a password reset link to{' '}
+                <span className="text-zinc-300">{email}</span>. It expires in 1 hour.
               </p>
               <Link href="/login" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
                 ← Back to sign in
