@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ApproveButton } from './ApproveButton'
-import { Zap, Users, CheckCircle2, Clock } from 'lucide-react'
+import { ResendButton } from './ResendButton'
+import { Zap, Users, CheckCircle2, Clock, MailCheck } from 'lucide-react'
 
 
 type WaitlistEntry = {
@@ -14,6 +15,7 @@ type WaitlistEntry = {
   orders_per_day: string | null
   created_at: string
   approved_at: string | null
+  invite_resent_at: string | null
 }
 
 export default async function AdminWaitlistPage() {
@@ -28,8 +30,21 @@ export default async function AdminWaitlistPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
-  const pending = (entries ?? []).filter((e: WaitlistEntry) => !e.approved_at)
-  const approved = (entries ?? []).filter((e: WaitlistEntry) => e.approved_at)
+  const all = (entries ?? []) as WaitlistEntry[]
+  const pending = all.filter(e => !e.approved_at)
+  const invited = all.filter(e => e.approved_at)
+
+  // Check which invited users have actually confirmed their account
+  const confirmedEmails = new Set<string>()
+  if (invited.length > 0) {
+    const { data: { users: authUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    for (const u of authUsers ?? []) {
+      if (u.email && u.last_sign_in_at) confirmedEmails.add(u.email)
+    }
+  }
+
+  const confirmed = invited.filter(e => confirmedEmails.has(e.email))
+  const awaitingResponse = invited.filter(e => !confirmedEmails.has(e.email))
 
   return (
     <div className="min-h-screen bg-zinc-950 p-6">
@@ -47,11 +62,12 @@ export default async function AdminWaitlistPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'Total submissions', value: entries?.length ?? 0, icon: Users },
+            { label: 'Total submissions', value: all.length, icon: Users },
             { label: 'Pending approval', value: pending.length, icon: Clock },
-            { label: 'Approved', value: approved.length, icon: CheckCircle2 },
+            { label: 'Invited', value: invited.length, icon: MailCheck },
+            { label: 'Confirmed', value: confirmed.length, icon: CheckCircle2 },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
               <Icon className="w-4 h-4 text-zinc-600 mb-2" />
@@ -62,45 +78,81 @@ export default async function AdminWaitlistPage() {
         </div>
 
         {/* Pending */}
-        <div className="mb-6">
-          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-            Pending ({pending.length})
-          </h2>
+        <Section title={`Pending (${pending.length})`}>
           {pending.length === 0 ? (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
-              <p className="text-sm text-zinc-600">No pending submissions</p>
-            </div>
+            <Empty label="No pending submissions" />
           ) : (
-            <div className="space-y-3">
-              {pending.map((entry: WaitlistEntry) => (
-                <EntryCard key={entry.id} entry={entry} showApprove />
-              ))}
-            </div>
+            pending.map(entry => (
+              <EntryCard key={entry.id} entry={entry}>
+                <ApproveButton id={entry.id} email={entry.email} restaurantName={entry.restaurant_name} />
+              </EntryCard>
+            ))
           )}
-        </div>
+        </Section>
 
-        {/* Approved */}
-        {approved.length > 0 && (
-          <div>
-            <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-              Approved ({approved.length})
-            </h2>
-            <div className="space-y-3">
-              {approved.map((entry: WaitlistEntry) => (
-                <EntryCard key={entry.id} entry={entry} showApprove={false} />
-              ))}
-            </div>
-          </div>
+        {/* Awaiting response */}
+        {awaitingResponse.length > 0 && (
+          <Section title={`Awaiting response (${awaitingResponse.length})`}>
+            {awaitingResponse.map(entry => (
+              <EntryCard key={entry.id} entry={entry} badge="Invited">
+                <ResendButton id={entry.id} email={entry.email} restaurantName={entry.restaurant_name} />
+              </EntryCard>
+            ))}
+          </Section>
+        )}
+
+        {/* Confirmed */}
+        {confirmed.length > 0 && (
+          <Section title={`Confirmed (${confirmed.length})`}>
+            {confirmed.map(entry => (
+              <EntryCard key={entry.id} entry={entry} badge="Active" />
+            ))}
+          </Section>
         )}
       </div>
     </div>
   )
 }
 
-function EntryCard({ entry, showApprove }: { entry: WaitlistEntry; showApprove: boolean }) {
-  const date = new Date(entry.created_at).toLocaleDateString('en-GB', {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6">
+      <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">{title}</h2>
+      <div className="space-y-3">{children}</div>
+    </div>
+  )
+}
+
+function Empty({ label }: { label: string }) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
+      <p className="text-sm text-zinc-600">{label}</p>
+    </div>
+  )
+}
+
+function EntryCard({
+  entry,
+  badge,
+  children,
+}: {
+  entry: WaitlistEntry
+  badge?: 'Invited' | 'Active'
+  children?: React.ReactNode
+}) {
+  const submitted = new Date(entry.created_at).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
   })
+
+  const invitedAt = entry.invite_resent_at ?? entry.approved_at
+  const invitedLabel = invitedAt
+    ? `Invited ${new Date(invitedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+    : null
+
+  const badgeColors = {
+    Invited: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+    Active: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  }
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
@@ -108,9 +160,9 @@ function EntryCard({ entry, showApprove }: { entry: WaitlistEntry; showApprove: 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <p className="text-sm font-semibold text-zinc-100">{entry.restaurant_name}</p>
-            {entry.approved_at && (
-              <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                Approved
+            {badge && (
+              <span className={`text-xs border px-2 py-0.5 rounded-full ${badgeColors[badge]}`}>
+                {badge}
               </span>
             )}
           </div>
@@ -124,16 +176,13 @@ function EntryCard({ entry, showApprove }: { entry: WaitlistEntry; showApprove: 
             {entry.orders_per_day && (
               <span className="text-xs text-zinc-600">{entry.orders_per_day} orders/day</span>
             )}
-            <span className="text-xs text-zinc-700">{date}</span>
+            <span className="text-xs text-zinc-700">{submitted}</span>
+            {invitedLabel && (
+              <span className="text-xs text-zinc-600">· {invitedLabel}</span>
+            )}
           </div>
         </div>
-        {showApprove && (
-          <ApproveButton
-            id={entry.id}
-            email={entry.email}
-            restaurantName={entry.restaurant_name}
-          />
-        )}
+        {children}
       </div>
     </div>
   )

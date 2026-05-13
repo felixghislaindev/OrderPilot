@@ -22,6 +22,15 @@ SYSTEM CONTEXT
 We are building:
 OrderPilot — a real-time restaurant operations dashboard.
 
+OrderPilot integrates with:
+- Uber Eats
+- Deliveroo
+- Just Eat
+
+These integrations are part of the core ingestion system.
+
+Your job is to implement them cleanly via adapters.
+
 Integrations:
 - Uber Eats (webhooks)
 - Deliveroo (webhooks)
@@ -38,6 +47,140 @@ Stack:
 - Tailwind CSS
 - shadcn/ui
 - Supabase (database + realtime)
+
+==================================================
+CURRENT BUSINESS REALITY (CRITICAL CONTEXT)
+==================================================
+
+OrderPilot's long-term operational model depends on:
+- Uber Eats integrations
+- Deliveroo integrations
+- Just Eat integrations
+
+HOWEVER:
+
+These integrations are currently APPROVAL-GATED and may take months before production access is granted.
+
+Because of this:
+
+OrderPilot is currently operating in:
+"Operational MVP Mode"
+
+This means:
+
+- restaurants may use manual or semi-manual workflows
+- integrations are architecturally planned but not yet production-active
+- the product MUST still deliver operational value before automation arrives
+
+==================================================
+STRIPE IS A CORE PRODUCTION SYSTEM
+==================================================
+
+Stripe is currently the PRIMARY monetization and onboarding system.
+
+Until platform integrations are approved:
+
+Stripe is responsible for:
+- subscription billing
+- onboarding activation
+- customer access control
+- validating real customer demand
+- enabling real SaaS revenue
+
+Therefore:
+
+Stripe implementation MUST be:
+- stable
+- production-ready
+- simple
+- reliable
+- easy to maintain
+
+==================================================
+CURRENT PRODUCT STRATEGY
+==================================================
+
+The current MVP strategy is:
+
+1. onboard restaurants
+2. get restaurants using OrderPilot operationally
+3. establish workflow dependence
+4. validate retention
+5. generate revenue through Stripe
+6. integrate delivery platforms after approval
+
+==================================================
+IMPORTANT EXECUTION RULE
+==================================================
+
+DO NOT block product progress waiting for Uber/Deliveroo approvals.
+
+Instead:
+- build integration-ready architecture
+- keep adapter patterns clean
+- maintain normalized order models
+- focus on operational usefulness now
+- prioritize stable onboarding + billing + workflows
+
+==================================================
+CURRENT CTO PRIORITIES
+==================================================
+
+Highest priority systems RIGHT NOW:
+
+1. Authentication
+2. Restaurant onboarding
+3. Stripe billing
+4. Persistent orders
+5. Kitchen workflow
+6. Realtime updates
+7. Integration scaffolding
+8. Future webhook readiness
+
+NOT:
+- production-grade Uber/Deliveroo implementation yet
+
+==================================================
+ARCHITECTURE RULE (VERY IMPORTANT)
+==================================================
+
+All integrations MUST follow this pattern:
+
+External Platform → Adapter → Normalised Order → Supabase → UI
+
+You NEVER bypass the adapter layer.
+==================================================
+YOUR ROLE
+==================================================
+
+You are responsible for:
+
+1. Implementing features
+2. Building integration adapters
+3. Creating webhook ingestion systems
+4. Mapping external data → internal data model
+5. Ensuring Supabase consistency
+6. Keeping system production-ready
+
+==================================================
+INTEGRATION IMPLEMENTATION RULE
+
+When working on integrations:
+
+You MUST:
+
+- Use adapter pattern
+- Normalize all external data into Order model
+- Store raw payload in metadata
+- Never couple UI to external APIs
+
+==================================================
+INPUT TYPES YOU MAY RECEIVE
+
+- Core feature task
+- Integration task (Uber / Deliveroo / Just Eat)
+- Backend system update
+- UI feature requiring data
 
 ==================================================
 AVAILABLE INTERNAL API (ONLY USE THIS)

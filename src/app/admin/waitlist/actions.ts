@@ -9,14 +9,15 @@ import { revalidatePath } from 'next/cache'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
-export async function approveWaitlistEntry(id: string, email: string, restaurantName: string) {
+async function requireAuth() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  return user
+}
 
+async function generateAndSend(email: string, restaurantName: string) {
   const admin = createAdminClient()
 
-  // Generate the magic invite link directly (gives us full email control)
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'invite',
     email,
@@ -26,35 +27,66 @@ export async function approveWaitlistEntry(id: string, email: string, restaurant
     },
   })
 
-  if (linkError) {
-    if (linkError.message.includes('already been registered')) {
-      return { error: 'This email already has an account.' }
-    }
-    return { error: linkError.message }
-  }
+  if (linkError) return { error: linkError.message }
 
   const inviteUrl = linkData.properties.action_link
+  const toAddress = process.env.RESEND_TO_OVERRIDE ?? email
 
-  // Send the branded email via Resend
   const { error: emailError } = await resend.emails.send({
-    from: 'OrderPilot <onboarding@resend.dev>',
-    to: email,
+    from: 'OrderPilot <hello@orderpilot.online>',
+    to: toAddress,
     subject: `You're approved — ${restaurantName}'s dashboard is ready`,
     react: InviteEmail({ restaurantName, inviteUrl, siteUrl }),
   })
 
-  if (emailError) return { error: 'Failed to send invite email. Please try again.' }
+  if (emailError) {
+    console.error('[admin] Resend failed:', emailError)
+    return { error: 'Failed to send invite email. Please try again.' }
+  }
 
-  // Pre-create the restaurant record so they land on a working dashboard
+  return { userId: linkData.user.id }
+}
+
+export async function approveWaitlistEntry(id: string, email: string, restaurantName: string) {
+  if (!(await requireAuth())) return { error: 'Not authenticated.' }
+
+  const result = await generateAndSend(email, restaurantName)
+  if ('error' in result) {
+    if (result.error?.includes('already been registered')) {
+      return { error: 'This email already has an account.' }
+    }
+    return result
+  }
+
+  const admin = createAdminClient()
+
   await admin.from('restaurants').insert({
-    owner_id: linkData.user.id,
+    owner_id: result.userId,
     name: restaurantName,
     timezone: 'Europe/London',
     platforms: ['uber_eats', 'deliveroo', 'just_eat', 'direct'],
   })
 
-  // Mark as approved
-  await admin.from('waitlist').update({ approved_at: new Date().toISOString() }).eq('id', id)
+  await admin
+    .from('waitlist')
+    .update({ approved_at: new Date().toISOString() })
+    .eq('id', id)
+
+  revalidatePath('/admin/waitlist')
+  return { success: true }
+}
+
+export async function resendInvite(id: string, email: string, restaurantName: string) {
+  if (!(await requireAuth())) return { error: 'Not authenticated.' }
+
+  const result = await generateAndSend(email, restaurantName)
+  if ('error' in result) return result
+
+  const admin = createAdminClient()
+  await admin
+    .from('waitlist')
+    .update({ invite_resent_at: new Date().toISOString() })
+    .eq('id', id)
 
   revalidatePath('/admin/waitlist')
   return { success: true }
