@@ -28,7 +28,7 @@ export async function requestPasswordReset(email: string): Promise<{ success: tr
     from: 'OrderPilot <hello@orderpilot.online>',
     to: email,
     subject: 'Reset your OrderPilot password',
-    react: ResetEmail({ resetUrl: linkData.properties.action_link, siteUrl }),
+    react: ResetEmail({ resetUrl: linkData.properties.action_link }),
   })
 
   if (emailError) {

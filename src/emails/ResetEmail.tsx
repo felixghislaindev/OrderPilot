@@ -4,10 +4,9 @@ import {
 
 interface ResetEmailProps {
   resetUrl: string
-  siteUrl: string
 }
 
-export function ResetEmail({ resetUrl, siteUrl }: ResetEmailProps) {
+export function ResetEmail({ resetUrl }: ResetEmailProps) {
   return (
     <Html>
       <Head />
