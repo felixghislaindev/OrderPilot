@@ -35,7 +35,7 @@ export default function SetPasswordPage() {
       return
     }
 
-    router.replace('/dashboard')
+    router.replace('/onboarding')
   }
 
   return (

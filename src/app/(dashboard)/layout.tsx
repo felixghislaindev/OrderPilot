@@ -11,11 +11,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: restaurant } = await supabase
     .from('restaurants')
-    .select('id, name, timezone, platforms, logo_url')
+    .select('id, name, timezone, platforms, logo_url, onboarded_at')
     .eq('owner_id', user.id)
     .single()
 
   if (!restaurant) redirect('/login')
+  if (!restaurant.onboarded_at) redirect('/onboarding')
 
   return (
     <OrdersProvider restaurantId={restaurant.id} restaurant={restaurant}>
