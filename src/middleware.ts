@@ -33,6 +33,7 @@ export async function middleware(request: NextRequest) {
     || pathname.startsWith('/onboarding')
     || pathname.startsWith('/track')
     || pathname.startsWith('/print')
+    || pathname.startsWith('/driver')
 
   if (!user && !isAuthRoute && !isAuthCallback && !isPublic) {
     const url = request.nextUrl.clone()

@@ -7,7 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await admin
     .from('orders')
-    .select('status, confirmed_at, prep_started_at, ready_at, picked_up_at, delivered_at, estimated_prep_minutes')
+    .select('status, confirmed_at, prep_started_at, ready_at, picked_up_at, delivered_at, estimated_prep_minutes, driver_lat, driver_lng, driver_location_updated_at')
     .eq('id', id)
     .single()
 

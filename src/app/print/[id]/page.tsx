@@ -2,9 +2,12 @@ import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatCurrency } from '@/lib/utils'
 import { PrintTrigger } from './PrintTrigger'
+import { QRCode } from '@/components/orders/QRCode'
 
 export default async function PrintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://orderpilot.online'
+  const driverUrl = `${siteUrl}/driver/${id}`
   const admin = createAdminClient()
 
   const { data: order } = await admin
@@ -120,8 +123,17 @@ export default async function PrintPage({ params }: { params: Promise<{ id: stri
           </div>
         )}
 
+        {/* Driver QR code */}
+        <div style={{ borderTop: '1px dashed #000', paddingTop: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, marginBottom: 6, fontWeight: 'bold' }}>DRIVER — Scan to share location</div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <QRCode value={driverUrl} size={96} />
+          </div>
+          <div style={{ fontSize: 9, marginTop: 4, color: '#555', wordBreak: 'break-all' }}>{driverUrl}</div>
+        </div>
+
         {/* Footer */}
-        <div style={{ borderTop: '1px dashed #000', paddingTop: 8, textAlign: 'center', fontSize: 10 }}>
+        <div style={{ borderTop: '1px dashed #000', marginTop: 8, paddingTop: 8, textAlign: 'center', fontSize: 10 }}>
           <div>Thank you for your order</div>
           <div style={{ marginTop: 2, color: '#666' }}>Powered by OrderPilot</div>
         </div>

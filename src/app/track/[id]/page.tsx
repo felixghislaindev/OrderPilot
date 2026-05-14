@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { formatCurrency } from '@/lib/utils'
 import { TrackingClient } from './TrackingClient'
 import { Zap } from 'lucide-react'
+import { LiveMap } from '@/components/map/LiveMap'
 
 export default async function TrackPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,14 +30,22 @@ export default async function TrackPage({ params }: { params: Promise<{ id: stri
   const timeStr = placedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   const dateStr = placedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 
+  const o = order as {
+    status: string; confirmed_at: string|null; prep_started_at: string|null
+    ready_at: string|null; picked_up_at: string|null; delivered_at: string|null
+    estimated_prep_minutes: number; driver_lat: number|null; driver_lng: number|null
+  }
+
   const initial = {
-    status:                 order.status,
-    confirmed_at:           order.confirmed_at,
-    prep_started_at:        order.prep_started_at,
-    ready_at:               order.ready_at,
-    picked_up_at:           order.picked_up_at,
-    delivered_at:           order.delivered_at,
-    estimated_prep_minutes: order.estimated_prep_minutes,
+    status:                 o.status as import('./TrackingClient').TrackingStatus,
+    confirmed_at:           o.confirmed_at,
+    prep_started_at:        o.prep_started_at,
+    ready_at:               o.ready_at,
+    picked_up_at:           o.picked_up_at,
+    delivered_at:           o.delivered_at,
+    estimated_prep_minutes: o.estimated_prep_minutes,
+    driver_lat:             o.driver_lat,
+    driver_lng:             o.driver_lng,
   }
 
   return (
@@ -90,9 +99,18 @@ export default async function TrackPage({ params }: { params: Promise<{ id: stri
             )}
           </div>
 
+          {/* Live driver map — only shown when driver is sharing location */}
+          {o.driver_lat && o.driver_lng && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Driver location</p>
+              <LiveMap lat={o.driver_lat} lng={o.driver_lng} />
+              <p className="text-xs text-zinc-600 mt-2 text-center">Updates live as driver moves</p>
+            </div>
+          )}
+
           {/* Live status tracker */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-5">Live tracking</p>
+            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-5">Order status</p>
             <TrackingClient orderId={id} initial={initial} />
           </div>
 

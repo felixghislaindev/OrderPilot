@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
 
-type TrackingStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'delivered' | 'cancelled'
+export type TrackingStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'delivered' | 'cancelled'
 
 interface StepData {
   status: TrackingStatus
@@ -13,6 +13,8 @@ interface StepData {
   picked_up_at: string | null
   delivered_at: string | null
   estimated_prep_minutes: number
+  driver_lat?: number | null
+  driver_lng?: number | null
 }
 
 const STEPS: { key: TrackingStatus; label: string; description: string }[] = [
