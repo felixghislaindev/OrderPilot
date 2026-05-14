@@ -10,9 +10,11 @@ import {
   Settings,
   Zap,
   LogOut,
+  CreditCard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -25,11 +27,23 @@ const navItems = [
 export function Sidebar({ restaurantName }: { restaurantName: string }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [billingLoading, setBillingLoading] = useState(false)
 
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  const handleBilling = async () => {
+    setBillingLoading(true)
+    try {
+      const res = await fetch('/api/billing/checkout', { method: 'POST' })
+      const { url } = await res.json()
+      if (url) window.location.href = url
+    } finally {
+      setBillingLoading(false)
+    }
   }
 
   return (
@@ -63,6 +77,15 @@ export function Sidebar({ restaurantName }: { restaurantName: string }) {
       </nav>
 
       <div className="p-3 border-t border-zinc-800 space-y-1">
+        <button
+          onClick={handleBilling}
+          disabled={billingLoading}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+        >
+          <CreditCard className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+          {billingLoading ? 'Loading…' : 'Upgrade to Growth'}
+        </button>
+
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-800/40">
           <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-indigo-400">
