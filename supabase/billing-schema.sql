@@ -24,10 +24,13 @@ CREATE TABLE IF NOT EXISTS api_keys (
 
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "owner manages api_keys" ON api_keys
-  FOR ALL USING (
-    restaurant_id IN (SELECT id FROM restaurants WHERE owner_id = auth.uid())
-  );
+DO $$ BEGIN
+  CREATE POLICY "owner manages api_keys" ON api_keys
+    FOR ALL USING (
+      restaurant_id IN (SELECT id FROM restaurants WHERE owner_id = auth.uid())
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ─── Stripe event idempotency ─────────────────────────────────────────────────
 

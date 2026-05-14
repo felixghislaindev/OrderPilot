@@ -51,10 +51,11 @@ export async function POST(req: NextRequest) {
         const restaurantId = session.metadata?.restaurantId
         if (!restaurantId) break
 
+        // Store IDs from checkout — subscription lifecycle events set the real status
         await admin.from('restaurants').update({
           stripe_customer_id:     session.customer as string,
           stripe_subscription_id: session.subscription as string,
-          subscription_status:    session.status === 'complete' ? 'active' : 'trialing',
+          subscription_status:    'trialing',
         }).eq('id', restaurantId)
 
         break
