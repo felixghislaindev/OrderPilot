@@ -24,7 +24,7 @@ const navItems = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-export function Sidebar({ restaurantName }: { restaurantName: string }) {
+export function Sidebar({ restaurantName, subscriptionStatus }: { restaurantName: string; subscriptionStatus: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const [billingLoading, setBillingLoading] = useState(false)
@@ -77,14 +77,34 @@ export function Sidebar({ restaurantName }: { restaurantName: string }) {
       </nav>
 
       <div className="p-3 border-t border-zinc-800 space-y-1">
-        <button
-          onClick={handleBilling}
-          disabled={billingLoading}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
-        >
-          <CreditCard className="w-4 h-4 shrink-0" strokeWidth={1.75} />
-          {billingLoading ? 'Loading…' : 'Upgrade to Growth'}
-        </button>
+        {subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? (
+          <button
+            onClick={handleBilling}
+            disabled={billingLoading}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/60 transition-colors disabled:opacity-50"
+          >
+            <CreditCard className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+            {billingLoading ? 'Loading…' : 'Manage billing'}
+          </button>
+        ) : subscriptionStatus === 'past_due' ? (
+          <button
+            onClick={handleBilling}
+            disabled={billingLoading}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+          >
+            <CreditCard className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+            {billingLoading ? 'Loading…' : 'Update payment'}
+          </button>
+        ) : (
+          <button
+            onClick={handleBilling}
+            disabled={billingLoading}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors disabled:opacity-50"
+          >
+            <CreditCard className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+            {billingLoading ? 'Loading…' : 'Upgrade to Growth'}
+          </button>
+        )}
 
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-zinc-800/40">
           <div className="w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">

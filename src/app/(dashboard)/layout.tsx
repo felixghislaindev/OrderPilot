@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: restaurant } = await supabase
     .from('restaurants')
-    .select('id, name, timezone, platforms, logo_url, onboarded_at')
+    .select('id, name, timezone, platforms, logo_url, onboarded_at, subscription_status')
     .eq('owner_id', user.id)
     .single()
 
@@ -21,7 +21,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <OrdersProvider restaurantId={restaurant.id} restaurant={restaurant}>
       <div className="flex h-screen bg-zinc-950 overflow-hidden">
-        <Sidebar restaurantName={restaurant.name} />
+        <Sidebar restaurantName={restaurant.name} subscriptionStatus={restaurant.subscription_status} />
         <div className="flex flex-col flex-1 min-w-0">
           <TopBar />
           <main className="flex-1 overflow-y-auto">
