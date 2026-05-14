@@ -118,5 +118,11 @@ export async function POST(req: NextRequest) {
   // ── Update key last_used_at ─────────────────────────────────────────────────
   await admin.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', apiKey.id)
 
-  return NextResponse.json({ success: true, order_id: order.id, display_id: order.display_id }, { status: 201 })
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://orderpilot.online'
+  return NextResponse.json({
+    success:      true,
+    order_id:     order.id,
+    display_id:   order.display_id,
+    tracking_url: `${siteUrl}/track/${order.id}`,
+  }, { status: 201 })
 }

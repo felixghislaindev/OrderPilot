@@ -1,6 +1,6 @@
 'use client'
 
-import { Clock, AlertTriangle, ChevronRight } from 'lucide-react'
+import { Clock, AlertTriangle, ChevronRight, Printer } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types/orders'
 import {
   cn,
@@ -132,15 +132,24 @@ export function OrderCard({ order, onStatusChange, compact = false }: OrderCardP
             </p>
           )}
         </div>
-        {actionLabel && nextStatus && onStatusChange && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => onStatusChange(order.id, nextStatus)}
-            className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 transition-colors"
+            onClick={() => window.open(`/print/${order.id}`, '_blank')}
+            title="Print receipt"
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
           >
-            {actionLabel}
-            <ChevronRight className="w-3 h-3" />
+            <Printer className="w-3.5 h-3.5" />
           </button>
-        )}
+          {actionLabel && nextStatus && onStatusChange && (
+            <button
+              onClick={() => onStatusChange(order.id, nextStatus)}
+              className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 transition-colors"
+            >
+              {actionLabel}
+              <ChevronRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
