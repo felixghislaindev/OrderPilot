@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import type { OrderStatus } from '@/types/orders'
 import { useOrders } from '@/contexts/OrdersContext'
 import { OrderCard } from '@/components/orders/OrderCard'
+import { NewOrderModal } from '@/components/orders/NewOrderModal'
 import { cn } from '@/lib/utils'
 
 type FilterValue = OrderStatus | 'active' | 'all'
@@ -16,11 +19,10 @@ const FILTERS: { label: string; value: FilterValue }[] = [
   { label: 'Delivered', value: 'delivered' },
 ]
 
-import { useState } from 'react'
-
 export function LiveOrderFeed() {
   const { orders, handleStatusChange, loading } = useOrders()
   const [filter, setFilter] = useState<FilterValue>('active')
+  const [showNewOrder, setShowNewOrder] = useState(false)
 
   const filtered = orders
     .filter(o => {
@@ -31,9 +33,24 @@ export function LiveOrderFeed() {
     .sort((a, b) => new Date(b.placed_at).getTime() - new Date(a.placed_at).getTime())
 
   return (
+    <>
+    {showNewOrder && (
+      <NewOrderModal
+        onClose={() => setShowNewOrder(false)}
+        onCreated={() => setShowNewOrder(false)}
+      />
+    )}
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-sm font-semibold text-zinc-200 shrink-0">Live Orders</h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNewOrder(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-white transition-colors shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New order
+          </button>
         <div className="flex items-center gap-0.5 bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 overflow-x-auto">
           {FILTERS.map(({ label, value }) => (
             <button
@@ -49,6 +66,7 @@ export function LiveOrderFeed() {
               {label}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -72,5 +90,6 @@ export function LiveOrderFeed() {
         </div>
       )}
     </div>
+    </>
   )
 }
