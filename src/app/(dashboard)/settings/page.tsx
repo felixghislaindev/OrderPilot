@@ -7,6 +7,7 @@ import { getPlatformLabel } from '@/lib/utils'
 import { saveRestaurantSettings, type SaveResult } from './actions'
 import type { Platform } from '@/types/orders'
 import { cn } from '@/lib/utils'
+import { ApiKeyPanel } from '@/components/settings/ApiKeyPanel'
 
 const ALL_PLATFORMS: Platform[] = ['uber_eats', 'deliveroo', 'just_eat', 'direct']
 
@@ -126,6 +127,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </form>
+
+      <ApiKeyPanel />
     </div>
   )
 }
