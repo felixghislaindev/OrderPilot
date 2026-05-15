@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hashApiKey } from '@/lib/api-keys'
+import { NewOrderEmail } from '@/emails/NewOrderEmail'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 interface IntakeItem {
   name:     string
@@ -35,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   const { data: apiKey } = await admin
     .from('api_keys')
-    .select('id, restaurant_id, revoked_at')
+    .select('id, restaurant_id, revoked_at, restaurants(name, owner_id)')
     .eq('key_hash', keyHash)
     .single()
 
@@ -118,11 +122,63 @@ export async function POST(req: NextRequest) {
   // ── Update key last_used_at ─────────────────────────────────────────────────
   await admin.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', apiKey.id)
 
+  // ── Send new-order email (fire-and-forget) ──────────────────────────────────
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://orderpilot.online'
+  void sendOrderNotification({
+    admin,
+    apiKey: apiKey as typeof apiKey & { restaurants: { name: string; owner_id: string } | null },
+    order,
+    body,
+    siteUrl,
+  })
+
   return NextResponse.json({
     success:      true,
     order_id:     order.id,
     display_id:   order.display_id,
     tracking_url: `${siteUrl}/track/${order.id}`,
   }, { status: 201 })
+}
+
+async function sendOrderNotification({
+  admin,
+  apiKey,
+  order,
+  body,
+  siteUrl,
+}: {
+  admin: ReturnType<typeof createAdminClient>
+  apiKey: { restaurant_id: string; restaurants: { name: string; owner_id: string } | null }
+  order: { id: string; display_id: string }
+  body: IntakeBody
+  siteUrl: string
+}) {
+  try {
+    const restaurant = apiKey.restaurants
+    if (!restaurant) return
+
+    const { data: { user } } = await admin.auth.admin.getUserById(restaurant.owner_id)
+    if (!user?.email) return
+
+    const toAddress = process.env.RESEND_TO_OVERRIDE ?? user.email
+
+    await resend.emails.send({
+      from:    'OrderPilot <hello@orderpilot.online>',
+      to:      toAddress,
+      subject: `New order #${order.display_id} from ${body.customer_name} — £${(body.total / 100).toFixed(2)}`,
+      react:   NewOrderEmail({
+        restaurantName:  restaurant.name,
+        displayId:       order.display_id,
+        customerName:    body.customer_name,
+        customerPhone:   body.customer_phone ?? null,
+        items:           body.items,
+        total:           body.total,
+        deliveryAddress: body.delivery_address ?? null,
+        notes:           body.notes ?? null,
+        dashboardUrl:    `${siteUrl}/orders`,
+      }),
+    })
+  } catch (err) {
+    console.error('[intake] order notification email failed:', err)
+  }
 }
